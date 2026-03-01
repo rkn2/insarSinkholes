@@ -1,0 +1,2 @@
+rmse_accel_proxy_mm,rmse_fused_mm,mean_modal_freq_pre_damage_hz,mean_modal_freq_post_damage_hz,anomaly_rate_pre_damage,anomaly_rate_post_damage,insar_observation_count
+16.100495789633726,9.477536480742515,5.3955078125,5.105985753676471,0.07368421052631578,0.9764705882352941,23

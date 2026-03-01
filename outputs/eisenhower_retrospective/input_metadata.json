@@ -1,0 +1,7 @@
+{
+  "input_format": "opera_point_export",
+  "n_points_total": 51,
+  "n_points_used": 51,
+  "distance_filter_m": 1500.0,
+  "min_point_obs": 20
+}
