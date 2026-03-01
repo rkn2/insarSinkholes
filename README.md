@@ -9,7 +9,9 @@ This repository contains a practical workflow for retrospective sinkhole risk an
   - a simple CSV (`date`, `displacement_mm`), or
   - OPERA/ASF point export CSV (`geometry`, `date (mm/dd/yr)`, `short wavelength displacement`).
 - Filters and aggregates point observations with robust statistics.
-- Computes a precursor risk score from displacement trend + cumulative settlement.
+- Computes a precursor risk score from displacement trend + cumulative settlement + non-stationary acceleration.
+- Fits an inverted Gaussian subsidence bowl to per-date point clouds and adds bowl-fit diagnostics to risk scoring.
+- Runs a statistical slope-break ("kink") test and reports break date + significance.
 - Calibrates alert threshold from historical false-alarm tolerance (instead of fixed only).
 - Produces a retrospective summary and plots.
 - Serves an interactive dashboard with:
@@ -109,10 +111,12 @@ Risk score combines:
 
 - normalized settlement velocity (`velocity_risk_z`)
 - cumulative settlement magnitude
+- non-stationary acceleration (`accel_risk_z`) from short/long velocity mismatch
+- Gaussian bowl evidence (`gaussian_bowl_risk`) weighted by fit quality
 
 Default formula:
 
-- `risk_score = 0.65 * velocity_risk_z + 0.35 * abs(cum_settlement_mm)/8.0`
+- `risk_score = 0.45*velocity_risk_z + 0.30*abs(cum_settlement_mm)/8.0 + 0.15*clip(accel_risk_z,0,∞) + 0.10*clip(gaussian_bowl_risk,0,∞)`
 
 Threshold options:
 
@@ -145,12 +149,17 @@ If absent, the dashboard uses an inferred location from public descriptions.
 - InSAR-only models are useful for trend detection, not deterministic failure prediction.
 - Utilities/drainage failures can trigger rapid local failures that InSAR may only partially capture.
 - Use this workflow with engineering judgment and supplemental site information (utilities, inspections, repairs, geotech context).
+- LOS decomposition (ascending + descending orbit fusion) is not yet implemented.
+- Tropospheric correction inputs (e.g., GACOS + GNSS) are not yet integrated.
+- Deep learning segmentation (UNet/LSTM) is not yet integrated in this repository.
+- Multispectral stress proxies (NDVI/MI) are not yet fused into the current risk score.
 
 ---
 
 ## Suggested Next Improvements
 
-- Add kriging interpolation option in dashboard (currently IDW).
-- Add “recent-change” alert logic so old persistent anomalies do not dominate.
-- Add per-point quality/coherence weighting if available in source products.
-
+- Add ascending/descending orbit LOS decomposition for vertical/horizontal motion separation.
+- Integrate atmospheric correction fields (GACOS or equivalent) before time-series analysis.
+- Add coherence/quality weighting per point (PSI-like persistence weighting).
+- Add multispectral hydro-stress proxy fusion (NDVI/MI/backscatter) for vegetation-heavy areas.
+- Add optional UNet/LSTM module for automated interferogram/time-series anomaly segmentation.

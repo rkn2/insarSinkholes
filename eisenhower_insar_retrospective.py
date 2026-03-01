@@ -9,12 +9,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
-import asf_search as asf
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import requests
-import ruptures as rpt
+from scipy import stats
+from scipy.optimize import least_squares
 from geopy.geocoders import Nominatim
 from shapely import wkt
 
@@ -77,6 +77,12 @@ def _asf_results_to_df(results: Iterable, dataset_name: str) -> pd.DataFrame:
 def discover_products(
     site: Site, start: str, end: str, max_results: int = 250
 ) -> tuple[dict[str, pd.DataFrame], dict[str, int]]:
+    try:
+        import asf_search as asf
+    except ImportError as exc:
+        raise ImportError(
+            "discover_products requires `asf_search`. Install it with: python3 -m pip install asf_search"
+        ) from exc
     point_wkt = f"POINT({site.lon} {site.lat})"
     datasets = {
         "ARIA_S1_GUNW": asf.DATASET.ARIA_S1_GUNW,
@@ -249,10 +255,116 @@ def parse_insar_input(
     return out, kept, meta
 
 
+def _lonlat_to_local_m(lon: pd.Series, lat: pd.Series, site: Site) -> tuple[np.ndarray, np.ndarray]:
+    lat0 = np.deg2rad(site.lat)
+    x = np.deg2rad(lon.to_numpy() - site.lon) * 6371000.0 * np.cos(lat0)
+    y = np.deg2rad(lat.to_numpy() - site.lat) * 6371000.0
+    return x, y
+
+
+def fit_gaussian_bowl_features(
+    point_obs: pd.DataFrame, site: Site, min_points: int = 7
+) -> pd.DataFrame:
+    if point_obs is None or point_obs.empty:
+        return pd.DataFrame(columns=["date", "gaussian_bowl_mm", "gaussian_sigma_m", "gaussian_fit_r2"])
+    obs = point_obs.copy()
+    obs["date"] = pd.to_datetime(obs["date"], errors="coerce")
+    obs = obs.dropna(subset=["date", "lon", "lat", "disp_m"]).copy()
+    if obs.empty:
+        return pd.DataFrame(columns=["date", "gaussian_bowl_mm", "gaussian_sigma_m", "gaussian_fit_r2"])
+
+    x_m, y_m = _lonlat_to_local_m(obs["lon"], obs["lat"], site)
+    obs["x_m"] = x_m
+    obs["y_m"] = y_m
+
+    rows: list[dict] = []
+    for date, g in obs.groupby("date"):
+        gg = g.drop_duplicates(subset=["point_id"]).copy() if "point_id" in g.columns else g.copy()
+        if len(gg) < min_points:
+            continue
+        x = gg["x_m"].to_numpy()
+        y = gg["y_m"].to_numpy()
+        d = gg["disp_m"].to_numpy()
+        i0 = int(np.argmin(d))
+        x0_init, y0_init = float(x[i0]), float(y[i0])
+        amp_init = float(d[i0] - np.median(d))
+        sigma_init = float(np.clip(np.std(np.c_[x, y]), 3.0, 80.0))
+        c_init = float(np.median(d))
+
+        def residuals(p: np.ndarray) -> np.ndarray:
+            amp, x0, y0, sigma, offset = p
+            pred = amp * np.exp(-((x - x0) ** 2 + (y - y0) ** 2) / (2.0 * sigma**2)) + offset
+            return pred - d
+
+        bounds_lo = np.array([-0.6, x.min() - 20.0, y.min() - 20.0, 1.0, -0.6])
+        bounds_hi = np.array([0.6, x.max() + 20.0, y.max() + 20.0, 600.0, 0.6])
+        p0 = np.array([amp_init, x0_init, y0_init, sigma_init, c_init], dtype=float)
+        p0 = np.clip(p0, bounds_lo + 1e-9, bounds_hi - 1e-9)
+
+        try:
+            fit = least_squares(residuals, x0=p0, bounds=(bounds_lo, bounds_hi), max_nfev=2000)
+        except Exception:
+            continue
+        amp, _, _, sigma, _ = fit.x
+        pred = d + fit.fun
+        sse = float(np.sum((d - pred) ** 2))
+        tss = float(np.sum((d - np.mean(d)) ** 2)) + 1e-12
+        r2 = 1.0 - sse / tss
+        rows.append(
+            {
+                "date": date,
+                "gaussian_bowl_mm": float(abs(amp) * 1000.0),
+                "gaussian_sigma_m": float(sigma),
+                "gaussian_fit_r2": float(np.clip(r2, -1.0, 1.0)),
+            }
+        )
+    return pd.DataFrame(rows).sort_values("date").reset_index(drop=True)
+
+
+def detect_slope_break(df: pd.DataFrame, min_seg: int = 5) -> dict:
+    y = df["smoothed_mm"].to_numpy(dtype=float)
+    t = (df["date"] - df["date"].min()).dt.days.to_numpy(dtype=float)
+    n = len(df)
+    if n < (2 * min_seg + 2):
+        return {"break_index": None, "break_date": None, "p_value": None, "slope_delta_mm_per_day": None}
+
+    a1, b1 = np.polyfit(t, y, 1)
+    yhat1 = a1 * t + b1
+    sse1 = float(np.sum((y - yhat1) ** 2))
+    best = {"f_stat": -np.inf, "idx": None, "p_value": None, "slope_delta": None}
+    for i in range(min_seg, n - min_seg):
+        t_l, y_l = t[:i], y[:i]
+        t_r, y_r = t[i:], y[i:]
+        a_l, b_l = np.polyfit(t_l, y_l, 1)
+        a_r, b_r = np.polyfit(t_r, y_r, 1)
+        sse2 = float(np.sum((y_l - (a_l * t_l + b_l)) ** 2) + np.sum((y_r - (a_r * t_r + b_r)) ** 2))
+        dof_num = 2
+        dof_den = n - 4
+        if sse2 <= 0.0 or dof_den <= 0:
+            continue
+        f_stat = ((sse1 - sse2) / dof_num) / (sse2 / dof_den)
+        if not np.isfinite(f_stat):
+            continue
+        p_val = float(stats.f.sf(max(f_stat, 0.0), dof_num, dof_den))
+        if f_stat > best["f_stat"]:
+            best = {"f_stat": float(f_stat), "idx": int(i), "p_value": p_val, "slope_delta": float(a_r - a_l)}
+
+    if best["idx"] is None:
+        return {"break_index": None, "break_date": None, "p_value": None, "slope_delta_mm_per_day": None}
+    return {
+        "break_index": best["idx"],
+        "break_date": str(df.loc[best["idx"], "date"].date()),
+        "p_value": best["p_value"],
+        "slope_delta_mm_per_day": best["slope_delta"],
+    }
+
+
 def analyze_timeseries(
     insar_df: pd.DataFrame,
     event_date: pd.Timestamp,
     claim_end_date: pd.Timestamp,
+    point_obs: pd.DataFrame | None = None,
+    site: Site | None = None,
     false_alarms_per_year: float | None = 1.0,
     fixed_threshold: float | None = None,
 ) -> tuple[pd.DataFrame, dict]:
@@ -268,8 +380,18 @@ def analyze_timeseries(
 
     # Change-point detection over smoothed displacement.
     y = df["smoothed_mm"].to_numpy().reshape(-1, 1)
-    model = rpt.Pelt(model="rbf").fit(y)
-    change_idx = [i for i in model.predict(pen=3) if i < len(df)]
+    change_idx: list[int] = []
+    try:
+        import ruptures as rpt
+
+        model = rpt.Pelt(model="rbf").fit(y)
+        change_idx = [i for i in model.predict(pen=3) if i < len(df)]
+    except ImportError:
+        # Fallback when ruptures is unavailable: flag large relative velocity jumps.
+        dv = pd.Series(df["smoothed_mm"]).diff().diff().abs()
+        th = float(dv.quantile(0.92)) if len(dv.dropna()) else np.inf
+        fallback_idx = np.where(dv.to_numpy() >= th)[0]
+        change_idx = [int(i) for i in fallback_idx if i < len(df)]
     df["changepoint"] = False
     if change_idx:
         df.loc[np.array(change_idx) - 1, "changepoint"] = True
@@ -283,7 +405,42 @@ def analyze_timeseries(
     # Negative velocity = settlement; convert to positive risk z.
     df["velocity_risk_z"] = (mu - df["velocity_mm_per_day"]) / sigma
     df["cum_settlement_mm"] = df["smoothed_mm"] - df["smoothed_mm"].iloc[0]
-    df["risk_score"] = 0.65 * df["velocity_risk_z"] + 0.35 * np.abs(df["cum_settlement_mm"]) / 8.0
+    # Non-stationary acceleration proxy: short-vs-long window velocity mismatch.
+    vel_short = df["velocity_mm_per_day"].rolling(3, min_periods=1).mean()
+    vel_long = df["velocity_mm_per_day"].rolling(9, min_periods=1).mean()
+    accel_energy = (vel_short - vel_long).abs().rolling(5, min_periods=1).mean()
+    accel_base = accel_energy.loc[baseline.index]
+    accel_mu = accel_base.mean()
+    accel_sigma = accel_base.std(ddof=0) + 1e-6
+    df["accel_risk_z"] = (accel_energy - accel_mu) / accel_sigma
+
+    if point_obs is not None and site is not None:
+        bowl_df = fit_gaussian_bowl_features(point_obs, site)
+        df = df.merge(bowl_df, on="date", how="left")
+    else:
+        df["gaussian_bowl_mm"] = np.nan
+        df["gaussian_sigma_m"] = np.nan
+        df["gaussian_fit_r2"] = np.nan
+
+    # Favor bowl features when spatial fit is strong.
+    bowl_base = df.loc[baseline.index, "gaussian_bowl_mm"].dropna()
+    bowl_mu = bowl_base.mean() if len(bowl_base) else 0.0
+    bowl_sigma = bowl_base.std(ddof=0) + 1e-6 if len(bowl_base) else 1.0
+    bowl_z = (df["gaussian_bowl_mm"].fillna(0.0) - bowl_mu) / bowl_sigma
+    fit_w = df["gaussian_fit_r2"].fillna(0.0).clip(lower=0.0, upper=1.0)
+    df["gaussian_bowl_risk"] = bowl_z * fit_w
+
+    df["risk_score"] = (
+        0.45 * df["velocity_risk_z"]
+        + 0.30 * np.abs(df["cum_settlement_mm"]) / 8.0
+        + 0.15 * df["accel_risk_z"].clip(lower=0.0)
+        + 0.10 * df["gaussian_bowl_risk"].clip(lower=0.0)
+    )
+
+    slope_break = detect_slope_break(df)
+    df["slope_break_flag"] = False
+    if slope_break["break_index"] is not None and slope_break["p_value"] is not None and slope_break["p_value"] < 0.05:
+        df.loc[int(slope_break["break_index"]), "slope_break_flag"] = True
 
     if fixed_threshold is not None:
         alert_threshold = float(fixed_threshold)
@@ -294,7 +451,9 @@ def analyze_timeseries(
             false_alarms_per_year = 1.0
         baseline_velocity_z = (mu - baseline) / sigma
         baseline_cum = np.abs(df.loc[baseline.index, "cum_settlement_mm"]) / 8.0
-        baseline_scores = 0.65 * baseline_velocity_z + 0.35 * baseline_cum
+        baseline_accel = df.loc[baseline.index, "accel_risk_z"].clip(lower=0.0)
+        baseline_bowl = df.loc[baseline.index, "gaussian_bowl_risk"].clip(lower=0.0)
+        baseline_scores = 0.45 * baseline_velocity_z + 0.30 * baseline_cum + 0.15 * baseline_accel + 0.10 * baseline_bowl
         dt_med = float(dt_days.median()) if np.isfinite(dt_days.median()) else 6.0
         obs_per_year = max(1.0, 365.25 / max(dt_med, 1.0))
         exceed_rate = min(0.49, max(1e-4, float(false_alarms_per_year) / obs_per_year))
@@ -336,6 +495,12 @@ def analyze_timeseries(
             if lead_days is not None
             else "No robust precursor crossing threshold before event date."
         ),
+        "slope_break_date": slope_break["break_date"],
+        "slope_break_p_value": slope_break["p_value"],
+        "slope_break_delta_mm_per_day": slope_break["slope_delta_mm_per_day"],
+        "max_accel_risk_z": float(df["accel_risk_z"].max()),
+        "max_gaussian_bowl_mm": float(df["gaussian_bowl_mm"].max()) if df["gaussian_bowl_mm"].notna().any() else None,
+        "max_gaussian_fit_r2": float(df["gaussian_fit_r2"].max()) if df["gaussian_fit_r2"].notna().any() else None,
     }
     if not prehistory_ok:
         summary["warning"] = "Pre-event history is shorter than 1 year; confidence in precursor conclusions is limited."
@@ -423,11 +588,18 @@ def main() -> None:
     claim_end_date = pd.Timestamp(args.claim_end_date) if args.claim_end_date else event_date
     analysis_start = pd.Timestamp(args.start_date)
     analysis_end = pd.Timestamp(args.end_date)
-    manifests, counts = discover_products(site, args.start_date, args.end_date, max_results=args.max_results)
-    write_manifest(manifests, counts, outdir / "data_discovery", site)
-    browse_saved = download_browse_images(
-        manifests["ARIA_S1_GUNW"], outdir / "data_discovery" / "aria_browse", max_images=args.download_browse
-    )
+    discovery_warning = None
+    try:
+        manifests, counts = discover_products(site, args.start_date, args.end_date, max_results=args.max_results)
+        write_manifest(manifests, counts, outdir / "data_discovery", site)
+        browse_saved = download_browse_images(
+            manifests["ARIA_S1_GUNW"], outdir / "data_discovery" / "aria_browse", max_images=args.download_browse
+        )
+    except Exception as exc:
+        manifests = {k: pd.DataFrame() for k in ["ARIA_S1_GUNW", "OPERA_S1_DISP", "SENTINEL1_SLC"]}
+        counts = {k: 0 for k in manifests}
+        browse_saved = 0
+        discovery_warning = str(exc)
 
     if args.insar_csv:
         insar, point_obs, input_meta = parse_insar_input(
@@ -452,6 +624,8 @@ def main() -> None:
         insar,
         event_date=event_date,
         claim_end_date=claim_end_date,
+        point_obs=point_obs,
+        site=site,
         false_alarms_per_year=args.false_alarms_per_year,
         fixed_threshold=args.fixed_threshold,
     )
@@ -459,6 +633,8 @@ def main() -> None:
     summary.update(input_meta)
     summary["analysis_start_date"] = str(analysis_start.date())
     summary["analysis_end_date"] = str(analysis_end.date())
+    if discovery_warning:
+        summary["data_discovery_warning"] = discovery_warning
     analyzed.to_csv(outdir / "insar_retrospective_timeseries.csv", index=False)
     if point_obs is not None:
         point_obs.to_csv(outdir / "insar_point_observations.csv", index=False)
@@ -471,6 +647,8 @@ def main() -> None:
     for name, df in manifests.items():
         print(f"{name}: {len(df)} products fetched in manifest ({counts[name]} total available)")
     print(f"ARIA browse quicklooks downloaded: {browse_saved}")
+    if discovery_warning:
+        print(f"Data discovery warning: {discovery_warning}")
     print(json.dumps(summary, indent=2))
     print(f"Outputs: {outdir.resolve()}")
 
