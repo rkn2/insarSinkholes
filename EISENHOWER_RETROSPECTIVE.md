@@ -9,12 +9,12 @@ This folder now includes a reproducible script to:
 ## Run
 
 ```bash
-python3 /Users/rebeccanapolitano/antigravityProjects/digitalTwins/structuralEx/eisenhower_insar_retrospective.py --max-results 300 --download-browse 20
+python3 /Users/rebeccanapolitano/antigravityProjects/digitalTwins/insarSinkholes/eisenhower_insar_retrospective.py --max-results 300 --download-browse 20
 ```
 
 Outputs are written to:
 
-`/Users/rebeccanapolitano/antigravityProjects/digitalTwins/structuralEx/outputs/eisenhower_retrospective`
+`/Users/rebeccanapolitano/antigravityProjects/digitalTwins/insarSinkholes/outputs/eisenhower_retrospective_upgraded`
 
 ## Data Needed For A True (Non-Synthetic) Reconstruction
 
@@ -26,7 +26,7 @@ You only need one measured displacement series for the deck location:
 If you already have InSAR results from MintPy/GMTSAR/ARIA/OPERA, export a CSV with exactly those two columns and run:
 
 ```bash
-python3 /Users/rebeccanapolitano/antigravityProjects/digitalTwins/structuralEx/eisenhower_insar_retrospective.py --insar-csv /absolute/path/to/eisenhower_insar_timeseries.csv
+python3 /Users/rebeccanapolitano/antigravityProjects/digitalTwins/insarSinkholes/eisenhower_insar_retrospective.py --insar-csv /absolute/path/to/eisenhower_insar_timeseries.csv
 ```
 
 ## Notes

@@ -58,15 +58,16 @@ python3 eisenhower_insar_retrospective.py \
   --claim-end-date 2023-08-16 \
   --false-alarms-per-year 1 \
   --min-point-obs 20 \
-  --insar-csv outputs/eisenhower_retrospective/asf-opera-displacement-2026-02-28_09-27-45.csv
+  --insar-csv outputs/eisenhower_retrospective/asf-opera-displacement-2026-02-28_09-27-45.csv \
+  --outdir outputs/eisenhower_retrospective_upgraded
 ```
 
 Outputs are written to:
 
-- `outputs/eisenhower_retrospective/insar_retrospective_timeseries.csv`
-- `outputs/eisenhower_retrospective/retrospective_summary.json`
-- `outputs/eisenhower_retrospective/retrospective_plot.png`
-- `outputs/eisenhower_retrospective/insar_point_observations.csv` (for point-based input)
+- `outputs/eisenhower_retrospective_upgraded/insar_retrospective_timeseries.csv`
+- `outputs/eisenhower_retrospective_upgraded/retrospective_summary.json`
+- `outputs/eisenhower_retrospective_upgraded/retrospective_plot.png`
+- `outputs/eisenhower_retrospective_upgraded/insar_point_observations.csv` (for point-based input)
 
 ## 3) Launch dashboard
 
@@ -75,6 +76,7 @@ streamlit run settlement_dashboard.py
 ```
 
 Then open the local URL shown in terminal (typically `http://localhost:8501`).
+The app defaults to the Eisenhower retrospective mode when retrospective outputs are available.
 
 ---
 
@@ -131,7 +133,7 @@ Important: if pre-event history is short, threshold confidence is lower; this is
 
 The dashboard can place a real sinkhole marker if this file exists:
 
-- `outputs/eisenhower_retrospective/sinkhole_location.csv`
+- `outputs/eisenhower_retrospective_upgraded/sinkhole_location.csv`
 
 CSV format (single row):
 

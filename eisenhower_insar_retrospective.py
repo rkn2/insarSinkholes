@@ -574,7 +574,7 @@ def parse_args() -> argparse.Namespace:
         help="Optional fixed risk threshold override.",
     )
     p.add_argument("--download-browse", type=int, default=20, help="How many browse quicklook images to fetch.")
-    p.add_argument("--outdir", default="outputs/eisenhower_retrospective")
+    p.add_argument("--outdir", default="outputs/eisenhower_retrospective_upgraded")
     return p.parse_args()
 
 

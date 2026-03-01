@@ -623,9 +623,9 @@ def risk_score_fig(df: pd.DataFrame, idx: int, summary: dict) -> go.Figure:
 
 
 def main() -> None:
-    st.set_page_config(page_title="Settlement Digital Twin Dashboard", layout="wide")
-    st.title("Settlement-Focused Structural Digital Twin Dashboard")
-    st.caption("Includes synthetic fusion mode and Eisenhower retrospective InSAR-only mode.")
+    st.set_page_config(page_title="Eisenhower Sinkhole Retrospective Dashboard", layout="wide")
+    st.title("Eisenhower Sinkhole Retrospective Dashboard")
+    st.caption("Retrospective InSAR analysis is primary. Synthetic fusion mode is available for comparison.")
 
     b = Building()
     cloud = make_point_cloud(b)
@@ -638,9 +638,10 @@ def main() -> None:
 
     st.sidebar.header("Scenario Controls")
     mode_options = ["Synthetic Fusion Demo"]
+    default_idx = 0
     if retro_df is not None:
-        mode_options.append("Eisenhower Retrospective (InSAR-only)")
-    mode = st.sidebar.radio("Dataset mode", options=mode_options, index=len(mode_options) - 1)
+        mode_options = ["Eisenhower Retrospective (InSAR-only)", "Synthetic Fusion Demo"]
+    mode = st.sidebar.radio("Dataset mode", options=mode_options, index=default_idx)
 
     if mode == "Eisenhower Retrospective (InSAR-only)":
         df = retro_df.copy()
