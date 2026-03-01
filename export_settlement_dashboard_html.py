@@ -48,8 +48,34 @@ def main() -> None:
         sd.time_series_fig(df, idx),
         sd.modal_fig(df, idx),
     ]
+    retro_df, retro_summary = sd.retrospective_data()
+    retro_figs = []
+    retro_html = ""
+    if retro_df is not None and len(retro_df) > 0:
+        ridx = len(retro_df) - 1
+        retro_figs = [
+            sd.insar_only_timeseries_fig(retro_df, ridx),
+            sd.risk_score_fig(retro_df, ridx, retro_summary),
+        ]
+        retro_lead = retro_summary.get("lead_days_to_event")
+        retro_break = retro_summary.get("slope_break_date")
+        retro_p = retro_summary.get("slope_break_p_value")
+        retro_html = f"""
+    <div class="header">
+      <h2 style="margin:0 0 6px 0;">Eisenhower Retrospective (InSAR-only)</h2>
+      <div>Static snapshot from retrospective outputs with upgraded risk features.</div>
+      <div class="kpis">
+        <div class="kpi"><div class="label">Event Date</div><div class="value">{retro_summary.get("event_date", "n/a")}</div></div>
+        <div class="kpi"><div class="label">First Alert</div><div class="value">{retro_summary.get("first_alert_date_in_claim_window", "n/a")}</div></div>
+        <div class="kpi"><div class="label">Lead Days</div><div class="value">{retro_lead if retro_lead is not None else "n/a"}</div></div>
+        <div class="kpi"><div class="label">Slope Break</div><div class="value">{retro_break if retro_break else "n/a"}</div></div>
+      </div>
+      <div style="margin-top:8px;color:#35526f;font-size:13px;">Slope-break p-value: {retro_p if retro_p is not None else "n/a"}</div>
+    </div>
+"""
 
     divs = [fig_div(figs[0], include_js=True)] + [fig_div(f, include_js=False) for f in figs[1:]]
+    retro_divs = [fig_div(f, include_js=False) for f in retro_figs]
 
     html = f"""<!doctype html>
 <html lang="en">
@@ -99,6 +125,8 @@ def main() -> None:
     <div class="note">
       <b>Interpretation:</b> InSAR provides sparse absolute displacement anchors, accelerometers provide dense dynamic indicators, and the point-cloud projection maps likely settlement bowls to building geometry for sinkhole-risk triage.
     </div>
+    {retro_html}
+    {"<div class='grid2'><div class='panel'>" + retro_divs[0] + "</div><div class='panel'>" + retro_divs[1] + "</div></div>" if len(retro_divs) == 2 else ""}
   </div>
 </body>
 </html>

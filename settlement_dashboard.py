@@ -26,18 +26,28 @@ from synthetic_structural_twin_demo import (
 )
 
 EVENT_DATE = pd.Timestamp("2023-08-16")
-RETRO_CSV = Path(
-    "/Users/rebeccanapolitano/antigravityProjects/digitalTwins/structuralEx/outputs/eisenhower_retrospective/insar_retrospective_timeseries.csv"
-)
-RETRO_SUMMARY_JSON = Path(
-    "/Users/rebeccanapolitano/antigravityProjects/digitalTwins/structuralEx/outputs/eisenhower_retrospective/retrospective_summary.json"
-)
-RETRO_POINT_OBS_CSV = Path(
-    "/Users/rebeccanapolitano/antigravityProjects/digitalTwins/structuralEx/outputs/eisenhower_retrospective/insar_point_observations.csv"
-)
-SINKHOLE_LOCATION_CSV = Path(
-    "/Users/rebeccanapolitano/antigravityProjects/digitalTwins/structuralEx/outputs/eisenhower_retrospective/sinkhole_location.csv"
-)
+BASE_DIR = Path(__file__).resolve().parent
+OUTPUTS_DIR = BASE_DIR / "outputs"
+
+
+def retro_paths() -> dict[str, Path]:
+    candidates = [
+        OUTPUTS_DIR / "eisenhower_retrospective_upgraded",
+        OUTPUTS_DIR / "eisenhower_retrospective",
+        Path("/Users/rebeccanapolitano/antigravityProjects/digitalTwins/structuralEx/outputs/eisenhower_retrospective"),
+    ]
+    selected = candidates[0]
+    for d in candidates:
+        if (d / "insar_retrospective_timeseries.csv").exists():
+            selected = d
+            break
+    return {
+        "retro_dir": selected,
+        "retro_csv": selected / "insar_retrospective_timeseries.csv",
+        "summary_json": selected / "retrospective_summary.json",
+        "point_obs_csv": selected / "insar_point_observations.csv",
+        "sinkhole_csv": selected / "sinkhole_location.csv",
+    }
 
 
 @dataclass
@@ -121,9 +131,10 @@ def load_eisenhower_geometry() -> dict | None:
 
 @st.cache_data(show_spinner=False)
 def load_real_insar_points_local(minx: float, miny: float) -> pd.DataFrame | None:
-    if not RETRO_POINT_OBS_CSV.exists():
+    paths = retro_paths()
+    if not paths["point_obs_csv"].exists():
         return None
-    df = pd.read_csv(RETRO_POINT_OBS_CSV)
+    df = pd.read_csv(paths["point_obs_csv"])
     required = {"lon", "lat", "date", "disp_m"}
     if not required.issubset(df.columns):
         return None
@@ -141,9 +152,10 @@ def load_real_insar_points_local(minx: float, miny: float) -> pd.DataFrame | Non
 
 @st.cache_data(show_spinner=False)
 def load_sinkhole_location_local(minx: float, miny: float) -> tuple[float, float] | None:
-    if not SINKHOLE_LOCATION_CSV.exists():
+    paths = retro_paths()
+    if not paths["sinkhole_csv"].exists():
         return None
-    df = pd.read_csv(SINKHOLE_LOCATION_CSV)
+    df = pd.read_csv(paths["sinkhole_csv"])
     cols = {c.strip().lower(): c for c in df.columns}
     if "lat" not in cols or "lon" not in cols:
         return None
@@ -520,18 +532,19 @@ def modal_fig(df: pd.DataFrame, idx: int) -> go.Figure:
 
 
 def retrospective_data() -> tuple[pd.DataFrame | None, dict]:
-    if not RETRO_CSV.exists():
+    paths = retro_paths()
+    if not paths["retro_csv"].exists():
         return None, {}
-    df = pd.read_csv(RETRO_CSV)
+    df = pd.read_csv(paths["retro_csv"])
     if "date" not in df.columns:
         return None, {}
     df["date"] = pd.to_datetime(df["date"], errors="coerce")
     df = df.dropna(subset=["date"]).reset_index(drop=True)
     summary = {}
-    if RETRO_SUMMARY_JSON.exists():
+    if paths["summary_json"].exists():
         import json
 
-        summary = json.loads(RETRO_SUMMARY_JSON.read_text(encoding="utf-8"))
+        summary = json.loads(paths["summary_json"].read_text(encoding="utf-8"))
     return df, summary
 
 
@@ -543,6 +556,10 @@ def insar_only_timeseries_fig(df: pd.DataFrame, idx: int) -> go.Figure:
         cp = df[df["changepoint"].astype(bool)]
         if len(cp):
             fig.add_trace(go.Scatter(x=cp["date"], y=cp["smoothed_mm"], mode="markers", name="Detected changepoint", marker={"color": "red", "size": 8}))
+    if "slope_break_flag" in df.columns:
+        sb = df[df["slope_break_flag"].astype(bool)]
+        if len(sb):
+            fig.add_trace(go.Scatter(x=sb["date"], y=sb["smoothed_mm"], mode="markers", name="Slope break", marker={"color": "magenta", "size": 9, "symbol": "x"}))
     fig.add_vline(x=EVENT_DATE, line_width=2, line_dash="dash", line_color="black")
     fig.add_vline(x=df.loc[idx, "date"], line_width=2, line_dash="dot", line_color="gray")
     fig.update_layout(
@@ -557,6 +574,28 @@ def insar_only_timeseries_fig(df: pd.DataFrame, idx: int) -> go.Figure:
 def risk_score_fig(df: pd.DataFrame, idx: int, summary: dict) -> go.Figure:
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df["date"], y=df["risk_score"], mode="lines", name="Risk score", line={"width": 3, "color": "orange"}))
+    if "accel_risk_z" in df.columns:
+        fig.add_trace(
+            go.Scatter(
+                x=df["date"],
+                y=df["accel_risk_z"],
+                mode="lines",
+                name="Acceleration risk z",
+                line={"width": 2, "color": "mediumseagreen"},
+                yaxis="y2",
+            )
+        )
+    if "gaussian_bowl_risk" in df.columns:
+        fig.add_trace(
+            go.Scatter(
+                x=df["date"],
+                y=df["gaussian_bowl_risk"],
+                mode="lines",
+                name="Gaussian bowl risk",
+                line={"width": 2, "color": "purple"},
+                yaxis="y2",
+            )
+        )
     if "velocity_mm_per_day" in df.columns:
         fig.add_trace(
             go.Scatter(
@@ -574,10 +613,10 @@ def risk_score_fig(df: pd.DataFrame, idx: int, summary: dict) -> go.Figure:
     fig.add_vline(x=event_dt, line_width=2, line_dash="dash", line_color="black")
     fig.add_vline(x=df.loc[idx, "date"], line_width=2, line_dash="dot", line_color="gray")
     fig.update_layout(
-        title="Precursor Risk Score + Raw Velocity (InSAR-only)",
+        title="Precursor Risk Score + Component Signals (InSAR-only)",
         xaxis_title="Date",
         yaxis_title="score",
-        yaxis2={"title": "mm/day", "overlaying": "y", "side": "right", "showgrid": False},
+        yaxis2={"title": "component / mm/day", "overlaying": "y", "side": "right", "showgrid": False},
         margin={"l": 10, "r": 10, "t": 45, "b": 10},
     )
     return fig
@@ -744,6 +783,10 @@ def main() -> None:
         kpi2.metric("Smoothed InSAR", f"{fused_mm:.2f} mm")
         kpi3.metric("Observed InSAR", f"{nearest_insar_mm:.2f} mm")
         kpi4.metric("Risk score", f"{float(df.loc[idx, 'risk_score']):.2f}")
+        extra1, extra2, extra3 = st.columns(3)
+        extra1.metric("Accel risk z", f"{float(df.loc[idx, 'accel_risk_z']):.2f}" if "accel_risk_z" in df.columns else "n/a")
+        extra2.metric("Gaussian bowl (mm)", f"{float(df.loc[idx, 'gaussian_bowl_mm']):.1f}" if "gaussian_bowl_mm" in df.columns and pd.notna(df.loc[idx, 'gaussian_bowl_mm']) else "n/a")
+        extra3.metric("Gaussian fit R2", f"{float(df.loc[idx, 'gaussian_fit_r2']):.2f}" if "gaussian_fit_r2" in df.columns and pd.notna(df.loc[idx, 'gaussian_fit_r2']) else "n/a")
     else:
         kpi2.metric("Fused settlement", f"{fused_mm:.2f} mm")
         kpi3.metric("Nearest InSAR obs", f"{nearest_insar_mm:.2f} mm")
@@ -788,6 +831,15 @@ def main() -> None:
                 f"First alert date: {retro_summary.get('first_alert_date_in_claim_window')}. "
                 f"Lead days: {retro_summary.get('lead_days_to_event')}."
             )
+            if retro_summary.get("slope_break_date"):
+                st.caption(
+                    f"Slope break date: {retro_summary.get('slope_break_date')} "
+                    f"(p={retro_summary.get('slope_break_p_value')})."
+                )
+            if retro_summary.get("data_discovery_warning"):
+                st.caption(f"Data discovery warning: {retro_summary.get('data_discovery_warning')}")
+            paths = retro_paths()
+            st.caption(f"Retrospective input directory: `{paths['retro_dir']}`")
             st.caption(
                 "Geometry source: OpenStreetMap footprint for Eisenhower Parking Deck. InSAR source: "
                 f"{retro_summary.get('source', 'unknown')}."
@@ -795,7 +847,7 @@ def main() -> None:
             if sinkhole_xy_from_file is not None:
                 st.caption("Sinkhole marker source: `sinkhole_location.csv` (user-provided lat/lon).")
             else:
-                st.caption("Sinkhole marker is inferred from 'near the front of the deck' reports. Add `outputs/eisenhower_retrospective/sinkhole_location.csv` with `lat,lon` for surveyed location.")
+                st.caption("Sinkhole marker is inferred from 'near the front of the deck' reports. Add `sinkhole_location.csv` with `lat,lon` in the active retrospective outputs directory.")
     else:
         with row2_left:
             st.plotly_chart(time_series_fig(df, idx), use_container_width=True)
