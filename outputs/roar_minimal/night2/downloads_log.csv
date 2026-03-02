@@ -1,0 +1,3 @@
+event_id,dataset,download_dir,attempted_products,status
+2020-08-28_packer_twp_carbon_county,SENTINEL1_SLC,/scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery_night2/2020-08-28_packer_twp_carbon_county/downloads/sentinel1_slc,5,ok
+2023-10-30_130_sickler_hill_rd_luzerne,SENTINEL1_SLC,/scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery_night2/2023-10-30_130_sickler_hill_rd_luzerne/downloads/sentinel1_slc,5,ok

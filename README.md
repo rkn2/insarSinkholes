@@ -1,167 +1,160 @@
-# InSAR Sinkhole Retrospective + Digital Twin Dashboard
+# InSAR Sinkhole Program (Multi-Event, ROAR-Ready)
 
-This repository contains a practical workflow for retrospective sinkhole risk analysis around the **Eisenhower Parking Deck (Penn State)** using InSAR point data, plus a Streamlit dashboard for visualization.
+This repository contains an end-to-end sinkhole monitoring workflow for Pennsylvania events:
 
-## What This Project Does
+1. ASF discovery + staged download (ARIA/OPERA/S1)
+2. QC reporting + deterministic train/val/test split
+3. Observed displacement extraction from ARIA `.nc`
+4. Baseline model training and alert-policy calibration
+5. De-leaked classifier training and trustworthiness audit
 
-- Discovers relevant SAR/InSAR products (ARIA, OPERA, Sentinel-1) for a site and date window.
-- Ingests InSAR time series from:
-  - a simple CSV (`date`, `displacement_mm`), or
-  - OPERA/ASF point export CSV (`geometry`, `date (mm/dd/yr)`, `short wavelength displacement`).
-- Filters and aggregates point observations with robust statistics.
-- Computes a precursor risk score from displacement trend + cumulative settlement + non-stationary acceleration.
-- Fits an inverted Gaussian subsidence bowl to per-date point clouds and adds bowl-fit diagnostics to risk scoring.
-- Runs a statistical slope-break ("kink") test and reports break date + significance.
-- Calibrates alert threshold from historical false-alarm tolerance (instead of fixed only).
-- Produces a retrospective summary and plots.
-- Serves an interactive dashboard with:
-  - plan view + section view,
-  - time series + risk score,
-  - 3D point-cloud projection with interpolated InSAR displacement.
+## Current Scope
 
----
+- Event catalog: 8 sinkhole events (configured in script defaults + split file)
+- Split contract:
+  - `train`: 5 events
+  - `val`: 1 event (Eisenhower)
+  - `test`: 2 holdout events
+- Primary operational target: low false alarms with lead-time-aware alerts
 
-## Repository Structure
+## Key Files
 
-- `eisenhower_insar_retrospective.py`  
-  Main retrospective analysis pipeline.
-- `settlement_dashboard.py`  
-  Streamlit app for visualization.
-- `synthetic_structural_twin_demo.py`  
-  Synthetic demo generator (InSAR + accelerometer fusion).
-- `export_settlement_dashboard_html.py`  
-  Exports a static HTML dashboard snapshot.
-- `EISENHOWER_RETROSPECTIVE.md`  
-  Focused project notes.
-- `outputs/`  
-  Generated outputs (CSV, JSON, PNG, HTML, manifests).
+Core workflow scripts:
 
----
+- `sinkhole_asf_discovery.py`
+- `train_sinkhole_precursor_baseline.py`
+- `calibrate_precursor_alert_policy.py`
+- `train_precursor_classifier.py`
+- `audit_model_trustworthiness.py`
+- `extract_observed_displacement_from_aria.py`
+- `extract_observed_displacement_from_aria_pairs.py`
 
-## Quick Start
+Configs and run helpers:
 
-## 1) Install dependencies
+- `config/event_split.yaml`
+- `scripts/roar_night1_derived.sh`
+- `scripts/roar_night2_slc_subset.sh`
+
+## Environment
+
+Recommended Python packages:
 
 ```bash
-python3 -m pip install pandas numpy scipy matplotlib streamlit plotly asf_search geopy shapely osmnx pyproj ruptures
+python3 -m pip install asf_search pandas numpy requests pyyaml pyarrow scikit-learn h5py
 ```
 
-## 2) Run retrospective analysis
+## Stage 1: Discovery + QC
 
-Example using OPERA point export CSV:
+### Derived-first discovery (no SLC by default)
 
 ```bash
-python3 eisenhower_insar_retrospective.py \
-  --start-date 2020-01-01 \
-  --end-date 2026-12-31 \
-  --event-date 2023-08-16 \
-  --claim-end-date 2023-08-16 \
-  --false-alarms-per-year 1 \
-  --min-point-obs 20 \
-  --insar-csv outputs/eisenhower_retrospective/asf-opera-displacement-2026-02-28_09-27-45.csv \
-  --outdir outputs/eisenhower_retrospective_upgraded
+python3 sinkhole_asf_discovery.py \
+  --skip-counts \
+  --prefer-derived \
+  --max-results 1000 \
+  --split-file config/event_split.yaml \
+  --outdir outputs/sinkhole_event_discovery_derived_full
 ```
 
-Outputs are written to:
-
-- `outputs/eisenhower_retrospective_upgraded/insar_retrospective_timeseries.csv`
-- `outputs/eisenhower_retrospective_upgraded/retrospective_summary.json`
-- `outputs/eisenhower_retrospective_upgraded/retrospective_plot.png`
-- `outputs/eisenhower_retrospective_upgraded/insar_point_observations.csv` (for point-based input)
-
-## 3) Launch dashboard
+### QC-only rerun
 
 ```bash
-streamlit run settlement_dashboard.py
+python3 sinkhole_asf_discovery.py \
+  --qc-only \
+  --split-file config/event_split.yaml \
+  --outdir outputs/sinkhole_event_discovery_derived_full
 ```
 
-Then open the local URL shown in terminal (typically `http://localhost:8501`).
-The app defaults to the Eisenhower retrospective mode when retrospective outputs are available.
+QC outputs:
 
----
+- `qc/coverage_report.csv`
+- `qc/missingness_report.csv`
+- `qc/parse_errors.csv`
+- `qc/run_summary.json`
 
-## Input Data Formats
+## Stage 2: Observed Displacement Extraction (ARIA)
 
-## A) Simple time-series CSV
+### Simple point extraction
 
-Required columns:
-
-- `date`
-- `displacement_mm`
-
-## B) OPERA/ASF point export CSV
-
-Expected columns:
-
-- `geometry` (WKT point, e.g., `POINT(lon lat)`)
-- `date (mm/dd/yr)`
-- `short wavelength displacement` (meters)
-
-The pipeline:
-
-- parses WKT into point coordinates,
-- filters by distance to site,
-- enforces minimum point observations (`--min-point-obs`),
-- rejects per-date outliers using robust MAD filtering,
-- aggregates by date using median and quantile uncertainty bands.
-
----
-
-## Risk Score and Threshold
-
-Risk score combines:
-
-- normalized settlement velocity (`velocity_risk_z`)
-- cumulative settlement magnitude
-- non-stationary acceleration (`accel_risk_z`) from short/long velocity mismatch
-- Gaussian bowl evidence (`gaussian_bowl_risk`) weighted by fit quality
-
-Default formula:
-
-- `risk_score = 0.45*velocity_risk_z + 0.30*abs(cum_settlement_mm)/8.0 + 0.15*clip(accel_risk_z,0,∞) + 0.10*clip(gaussian_bowl_risk,0,∞)`
-
-Threshold options:
-
-- **Calibrated** (default): derived from baseline history using `--false-alarms-per-year`.
-- **Fixed**: override with `--fixed-threshold`.
-
-Important: if pre-event history is short, threshold confidence is lower; this is reported in summary JSON.
-
----
-
-## Optional: True Sinkhole Marker on Plan View
-
-The dashboard can place a real sinkhole marker if this file exists:
-
-- `outputs/eisenhower_retrospective_upgraded/sinkhole_location.csv`
-
-CSV format (single row):
-
-```csv
-lat,lon
-40.8023,-77.8609
+```bash
+python3 extract_observed_displacement_from_aria.py \
+  --download-outdir /scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery \
+  --manifest-root outputs/sinkhole_event_discovery_derived_full \
+  --out-csv config/observed_displacement_aria.csv
 ```
 
-If absent, the dashboard uses an inferred location from public descriptions.
+### Pair-aware extraction (recommended)
 
----
+```bash
+python3 extract_observed_displacement_from_aria_pairs.py \
+  --download-outdir /scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery \
+  --download-outdir /scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery_aria_expand \
+  --manifest-root outputs/sinkhole_event_discovery \
+  --out-csv-raw config/observed_displacement_aria_pairs_raw.csv \
+  --out-csv-agg config/observed_displacement_aria_pairs_agg.csv
+```
 
-## Notes and Limitations
+## Stage 3: Baseline Modeling + Policy Calibration
 
-- InSAR-only models are useful for trend detection, not deterministic failure prediction.
-- Utilities/drainage failures can trigger rapid local failures that InSAR may only partially capture.
-- Use this workflow with engineering judgment and supplemental site information (utilities, inspections, repairs, geotech context).
-- LOS decomposition (ascending + descending orbit fusion) is not yet implemented.
-- Tropospheric correction inputs (e.g., GACOS + GNSS) are not yet integrated.
-- Deep learning segmentation (UNet/LSTM) is not yet integrated in this repository.
-- Multispectral stress proxies (NDVI/MI) are not yet fused into the current risk score.
+```bash
+python3 train_sinkhole_precursor_baseline.py \
+  --discovery-outdir outputs/sinkhole_event_discovery_derived_full \
+  --split-file config/event_split.yaml \
+  --observed-displacement-csv config/observed_displacement_aria_pairs_agg.csv \
+  --outdir outputs/ml/derived_full_observed_aria_pairs
 
----
+python3 calibrate_precursor_alert_policy.py \
+  --model-outdir outputs/ml/derived_full_observed_aria_pairs \
+  --selection-mode event_cv \
+  --max-false-alarms-per-year 3.0
+```
 
-## Suggested Next Improvements
+## Stage 4: De-Leaked Classifier (Recommended Path)
 
-- Add ascending/descending orbit LOS decomposition for vertical/horizontal motion separation.
-- Integrate atmospheric correction fields (GACOS or equivalent) before time-series analysis.
-- Add coherence/quality weighting per point (PSI-like persistence weighting).
-- Add multispectral hydro-stress proxy fusion (NDVI/MI/backscatter) for vegetation-heavy areas.
-- Add optional UNet/LSTM module for automated interferogram/time-series anomaly segmentation.
+Train de-leaked classifier by removing leakage-prone features and rebuilding labels from event window only:
+
+```bash
+python3 train_precursor_classifier.py \
+  --feature-table outputs/ml/derived_full_observed_aria_pairs_relaxed_w8/feature_table.parquet \
+  --outdir outputs/ml/classifier_v2_deleaked \
+  --model hgb \
+  --positive-class-weight 8 \
+  --val-far-cap 3.0 \
+  --relabel-window-days 60 \
+  --exclude-features days_to_event robust_vel_z robust_accel_z
+
+python3 calibrate_precursor_alert_policy.py \
+  --model-outdir outputs/ml/classifier_v2_deleaked \
+  --selection-mode event_cv \
+  --max-false-alarms-per-year 3.0
+```
+
+Conservative deployed policy artifact:
+
+- `outputs/ml/classifier_v2_deleaked/deployed_alert_policy.json`
+
+## Stage 5: Trustworthiness Audit (Required)
+
+```bash
+python3 audit_model_trustworthiness.py \
+  --model-outdir outputs/ml/classifier_v1_hgb
+```
+
+Audit outputs:
+
+- `trustworthiness_audit.json`
+- `trustworthiness_audit.md`
+
+## ROAR Notes
+
+- Run heavy downloads/extraction on compute nodes (`srun -p interactive`), not submit node.
+- Use `/scratch` for large downloads.
+- Keep Earthdata token in environment, not hardcoded in scripts.
+
+## Reproducibility Artifacts
+
+- `outputs/roar_minimal/REPRODUCIBILITY_TRAIL.txt`
+- `outputs/roar_minimal/analysis_ready_index.csv`
+- `outputs/roar_minimal/analysis_ready_index_summary.json`
+
+These include command history, run IDs, and minimal copied metadata for audit/replay.

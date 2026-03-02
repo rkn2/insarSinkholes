@@ -1,0 +1,36 @@
+{
+  "selection_mode": "event_cv",
+  "selection_rule": "best_selector_f1_under_far_constraint",
+  "max_false_alarms_per_year": 3.0,
+  "chosen_policy": {
+    "threshold": 0.5800000000000001,
+    "consecutive": 1,
+    "min_persistence_days": 0,
+    "cooldown_days": 10
+  },
+  "selector_metrics": {
+    "tp": 16,
+    "fp": 118,
+    "fn": 213,
+    "tn": 3377,
+    "precision": 0.11940298507373581,
+    "recall": 0.06986899563288267,
+    "f1": 0.08815426950621162,
+    "false_alarms_per_year": 1.7556509298998568,
+    "events_with_alert": 6,
+    "median_lead_days": 330.0392361111111
+  },
+  "test_metrics": {
+    "tp": 2,
+    "fp": 39,
+    "fn": 51,
+    "tn": 1193,
+    "precision": 0.04878048780368829,
+    "recall": 0.03773584905589178,
+    "f1": 0.0425531909966048,
+    "false_alarms_per_year": 1.646103896103896,
+    "events_with_alert": 2,
+    "median_lead_days": 322.0368344907407
+  },
+  "sweep_rows": 2480
+}

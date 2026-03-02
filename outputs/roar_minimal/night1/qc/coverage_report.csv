@@ -1,0 +1,25 @@
+event_id,split,dataset,manifest_exists,manifest_readable,row_count,parse_ok,within_window,window_start_expected,window_end_expected,start_min,start_max
+2018-03-01_west_whiteland_chester,train,ARIA_S1_GUNW,True,True,250,True,True,2017-03-01,2018-06-01,2017-10-20 22:58:34+00:00,2018-05-24 22:58:58+00:00
+2018-03-01_west_whiteland_chester,train,OPERA_S1_DISP,True,True,120,True,False,2017-03-01,2018-06-01,2016-07-09 22:58:37+00:00,2018-05-24 22:59:04+00:00
+2018-03-01_west_whiteland_chester,train,SENTINEL1_SLC,False,False,0,False,False,2017-03-01,2018-06-01,,
+2018-07-26_codorus_creek_york,train,ARIA_S1_GUNW,True,True,250,True,True,2017-07-26,2018-10-26,2018-07-11 22:58:36+00:00,2018-10-20 23:07:07+00:00
+2018-07-26_codorus_creek_york,train,OPERA_S1_DISP,True,True,237,True,False,2017-07-26,2018-10-26,2017-03-18 22:58:37+00:00,2018-10-20 23:07:22+00:00
+2018-07-26_codorus_creek_york,train,SENTINEL1_SLC,False,False,0,False,False,2017-07-26,2018-10-26,,
+2018-08-10_tanger_outlets_lancaster,train,ARIA_S1_GUNW,True,True,250,True,True,2017-08-10,2018-11-10,2018-07-28 23:07:04+00:00,2018-11-08 22:59:05+00:00
+2018-08-10_tanger_outlets_lancaster,train,OPERA_S1_DISP,True,True,234,True,False,2017-08-10,2018-11-10,2017-03-18 22:58:37+00:00,2018-11-08 22:59:12+00:00
+2018-08-10_tanger_outlets_lancaster,train,SENTINEL1_SLC,False,False,0,False,False,2017-08-10,2018-11-10,,
+2020-08-28_packer_twp_carbon_county,train,ARIA_S1_GUNW,True,True,250,True,True,2019-08-28,2020-11-28,2020-06-06 22:59:12+00:00,2020-11-21 22:59:18+00:00
+2020-08-28_packer_twp_carbon_county,train,OPERA_S1_DISP,True,True,121,True,False,2019-08-28,2020-11-28,2019-03-20 22:59:12+00:00,2020-11-21 22:59:40+00:00
+2020-08-28_packer_twp_carbon_county,train,SENTINEL1_SLC,False,False,0,False,False,2019-08-28,2020-11-28,,
+2023-08-16_eisenhower_parking_deck_penn_state,train,ARIA_S1_GUNW,True,True,207,True,True,2022-08-16,2023-11-16,2022-08-24 23:07:30+00:00,2023-11-11 23:07:36+00:00
+2023-08-16_eisenhower_parking_deck_penn_state,train,OPERA_S1_DISP,True,True,112,True,False,2022-08-16,2023-11-16,2022-04-14 23:07:46+00:00,2023-11-11 23:08:06+00:00
+2023-08-16_eisenhower_parking_deck_penn_state,train,SENTINEL1_SLC,False,False,0,False,False,2022-08-16,2023-11-16,,
+2023-10-30_130_sickler_hill_rd_luzerne,train,ARIA_S1_GUNW,True,True,205,True,True,2022-10-30,2024-01-30,2022-10-30 22:59:30+00:00,2024-01-29 22:59:31+00:00
+2023-10-30_130_sickler_hill_rd_luzerne,train,OPERA_S1_DISP,True,True,116,True,False,2022-10-30,2024-01-30,2022-09-12 22:59:40+00:00,2024-01-29 22:59:59+00:00
+2023-10-30_130_sickler_hill_rd_luzerne,train,SENTINEL1_SLC,False,False,0,False,False,2022-10-30,2024-01-30,,
+2024-12-02_marguerite_westmoreland_county,train,ARIA_S1_GUNW,True,True,250,True,True,2023-12-02,2025-03-02,2024-01-15 23:15:53+00:00,2025-02-26 23:15:45+00:00
+2024-12-02_marguerite_westmoreland_county,train,OPERA_S1_DISP,True,True,86,True,False,2023-12-02,2025-03-02,2023-11-04 23:15:55+00:00,2025-02-26 23:15:59+00:00
+2024-12-02_marguerite_westmoreland_county,train,SENTINEL1_SLC,False,False,0,False,False,2023-12-02,2025-03-02,,
+2024-12-16_park_place_schuylkill_county,train,ARIA_S1_GUNW,True,True,250,True,True,2023-12-16,2025-03-16,2024-03-05 22:59:31+00:00,2025-02-28 22:59:24+00:00
+2024-12-16_park_place_schuylkill_county,train,OPERA_S1_DISP,True,True,103,True,False,2023-12-16,2025-03-16,2023-11-30 22:59:44+00:00,2025-03-12 22:59:43+00:00
+2024-12-16_park_place_schuylkill_county,train,SENTINEL1_SLC,False,False,0,False,False,2023-12-16,2025-03-16,,

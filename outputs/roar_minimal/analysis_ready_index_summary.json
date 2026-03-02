@@ -1,0 +1,19 @@
+{
+  "runs_included": [
+    "night1",
+    "night2"
+  ],
+  "rows": 18,
+  "events": 8,
+  "datasets": [
+    "ARIA_S1_GUNW",
+    "OPERA_S1_DISP",
+    "SENTINEL1_SLC"
+  ],
+  "statuses": {
+    "skipped: storage cap reached": 13,
+    "ok": 5
+  },
+  "duplicates_run_event_dataset": 0,
+  "output_csv": "/Users/rebeccanapolitano/antigravityProjects/digitalTwins/structuralEx/outputs/roar_minimal/analysis_ready_index.csv"
+}

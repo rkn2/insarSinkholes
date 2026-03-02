@@ -1,0 +1,99 @@
+{
+  "verdict": "high_leakage_risk",
+  "findings": [
+    "`days_to_event` is inference-leaky for real-time deployment."
+  ],
+  "baseline_metrics": {
+    "train": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "n": 3123,
+      "positives": 188
+    },
+    "val": {
+      "precision": 0.9761904761904762,
+      "recall": 1.0,
+      "f1": 0.9879518072289156,
+      "n": 601,
+      "positives": 41
+    },
+    "test": {
+      "precision": 0.9811320754716981,
+      "recall": 0.9811320754716981,
+      "f1": 0.9811320754716981,
+      "n": 1285,
+      "positives": 53
+    }
+  },
+  "split_contamination": {
+    "cross_split_key_collisions": 0,
+    "key_columns": [
+      "event_id",
+      "dataset",
+      "date"
+    ]
+  },
+  "temporal_sanity": {
+    "post_event_rows_in_predictions": 0
+  },
+  "shortcut_scan_top": [
+    {
+      "feature": "robust_accel_z",
+      "test_f1_single_feature": 0.37551020408163266,
+      "test_precision_single_feature": 0.23958333333333334,
+      "test_recall_single_feature": 0.8679245283018868
+    },
+    {
+      "feature": "acc_mm_day2",
+      "test_f1_single_feature": 0.27230046948356806,
+      "test_precision_single_feature": 0.18125,
+      "test_recall_single_feature": 0.5471698113207547
+    },
+    {
+      "feature": "vel_mm_day",
+      "test_f1_single_feature": 0.23036649214659685,
+      "test_precision_single_feature": 0.15942028985507245,
+      "test_recall_single_feature": 0.41509433962264153
+    },
+    {
+      "feature": "robust_vel_z",
+      "test_f1_single_feature": 0.1885245901639344,
+      "test_precision_single_feature": 0.12041884816753927,
+      "test_recall_single_feature": 0.4339622641509434
+    },
+    {
+      "feature": "days_to_event",
+      "test_f1_single_feature": 0.1875,
+      "test_precision_single_feature": 0.12280701754385964,
+      "test_recall_single_feature": 0.39622641509433965
+    }
+  ],
+  "counterfactual_ablation": {
+    "kept_features": [
+      "disp_mm",
+      "cum_settlement_mm",
+      "vel_mm_day",
+      "acc_mm_day2",
+      "changepoint_flag",
+      "obs_gap_days",
+      "is_aria",
+      "is_opera"
+    ],
+    "removed_features": [
+      "days_to_event",
+      "robust_accel_z",
+      "robust_vel_z"
+    ],
+    "test_f1": 0.45161290322580644,
+    "test_precision": 0.3431372549019608,
+    "test_recall": 0.660377358490566,
+    "threshold": 0.32499999999999996
+  },
+  "recommended_actions": [
+    "Remove days_to_event from deployment model features.",
+    "Do not define labels using robust_vel_z/robust_accel_z if those are model inputs.",
+    "Rebuild labels from external event windows only, then recompute model features independently.",
+    "Re-run event-wise CV after leakage feature removal and compare holdout stability."
+  ]
+}

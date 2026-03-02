@@ -1,0 +1,44 @@
+{
+  "model": "hgb",
+  "positive_class_weight": 12.0,
+  "calibration": "isotonic_on_val",
+  "threshold_tuned_on_val": 0.1,
+  "val_far_cap": 3.0,
+  "train": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "false_alarms_per_year": 0.0,
+    "n": 3123,
+    "positives": 188
+  },
+  "val": {
+    "precision": 0.9761904761904762,
+    "recall": 1.0,
+    "f1": 0.9879518072289156,
+    "false_alarms_per_year": 0.09285714285714285,
+    "n": 601,
+    "positives": 41
+  },
+  "test": {
+    "precision": 0.9811320754716981,
+    "recall": 0.9811320754716981,
+    "f1": 0.9811320754716981,
+    "false_alarms_per_year": 0.04220779220779221,
+    "n": 1285,
+    "positives": 53
+  },
+  "feature_columns": [
+    "disp_mm",
+    "cum_settlement_mm",
+    "vel_mm_day",
+    "acc_mm_day2",
+    "robust_vel_z",
+    "robust_accel_z",
+    "changepoint_flag",
+    "obs_gap_days",
+    "is_aria",
+    "is_opera",
+    "days_to_event"
+  ]
+}

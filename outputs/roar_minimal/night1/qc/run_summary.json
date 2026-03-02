@@ -1,0 +1,21 @@
+{
+  "events_total": 8,
+  "event_dataset_pairs": 24,
+  "event_dataset_pairs_parse_ok": 16,
+  "events_with_usable_derived_timeseries": 8,
+  "failures_by_category": {
+    "manifest_missing": 8
+  },
+  "acceptance": {
+    "manifest_generation_8_of_8": true,
+    "derived_timeseries_ge_6_events": true,
+    "failures_categorized": true,
+    "deterministic_split_files": true,
+    "pipeline_validated": true
+  },
+  "qc_reports": {
+    "coverage_report": "/scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery/qc/coverage_report.csv",
+    "missingness_report": "/scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery/qc/missingness_report.csv",
+    "parse_errors": "/scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery/qc/parse_errors.csv"
+  }
+}

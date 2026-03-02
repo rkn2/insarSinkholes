@@ -1,0 +1,74 @@
+ROAR Sinkhole InSAR Reproducibility Trail
+Generated: 2026-03-01 America/New_York
+
+Local project:
+- /Users/rebeccanapolitano/antigravityProjects/digitalTwins/structuralEx
+
+ROAR workspace:
+- /storage/home/rjn5308/sinkholes
+
+Data output locations on ROAR:
+- Night 1 derived run: /scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery
+- Night 2 SLC subset run: /scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery_night2
+
+Interactive jobs used:
+- Night 1 (derived): srun job 48852435 on p-gc-3175
+- Night 2 (SLC subset): srun job 48852503 on p-gc-3175
+
+Command used for Night 1 (derived-first, 50GB target cap):
+python3 sinkhole_asf_discovery.py \
+  --skip-counts \
+  --download-products \
+  --auth-mode auto \
+  --prefer-derived \
+  --max-total-gb 50 \
+  --split-file /storage/home/rjn5308/sinkholes/config/event_split.yaml \
+  --outdir /scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery
+
+Command used for Night 2 (SLC subset):
+python3 sinkhole_asf_discovery.py \
+  --skip-counts \
+  --download-products \
+  --auth-mode auto \
+  --dataset SENTINEL1_SLC \
+  --event-id 2020-08-28_packer_twp_carbon_county \
+  --event-id 2023-10-30_130_sickler_hill_rd_luzerne \
+  --max-downloads-per-manifest 5 \
+  --max-total-gb 50 \
+  --split-file /storage/home/rjn5308/sinkholes/config/event_split.yaml \
+  --outdir /scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery_night2
+
+Split configuration used:
+- /storage/home/rjn5308/sinkholes/config/event_split.yaml
+
+Important note:
+- The --max-total-gb cap is currently enforced between dataset batches, not during a batch download.
+  This can overshoot the target cap depending on product sizes.
+
+Minimal artifacts copied locally (no binaries downloaded):
+- /Users/rebeccanapolitano/antigravityProjects/digitalTwins/structuralEx/outputs/roar_minimal/night1
+- /Users/rebeccanapolitano/antigravityProjects/digitalTwins/structuralEx/outputs/roar_minimal/night2
+
+Night 1 local minimal snapshot summary:
+- size: 5,187,448 bytes
+- downloads_log rows: 16
+- downloads status ok: 3
+- qc pipeline_validated: true
+
+Night 2 local minimal snapshot summary:
+- size: 517,771 bytes
+- downloads_log rows: 2
+- downloads status ok: 2
+- qc pipeline_validated: false
+
+Reason Night 2 pipeline_validated=false:
+- Night 2 intentionally runs only SENTINEL1_SLC for 2 events, so derived-timeseries acceptance checks are not satisfied.
+
+How to recreate local minimal snapshots from ROAR scratch:
+rsync -av --prune-empty-dirs --include '*/' --include '*.csv' --include '*.json' --exclude '*' \
+  roar-collab:/scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery/ \
+  /Users/rebeccanapolitano/antigravityProjects/digitalTwins/structuralEx/outputs/roar_minimal/night1/
+
+rsync -av --prune-empty-dirs --include '*/' --include '*.csv' --include '*.json' --exclude '*' \
+  roar-collab:/scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery_night2/ \
+  /Users/rebeccanapolitano/antigravityProjects/digitalTwins/structuralEx/outputs/roar_minimal/night2/

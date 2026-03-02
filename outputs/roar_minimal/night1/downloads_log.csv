@@ -1,0 +1,17 @@
+event_id,dataset,download_dir,attempted_products,status
+2024-12-02_marguerite_westmoreland_county,ARIA_S1_GUNW,/scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery/2024-12-02_marguerite_westmoreland_county/downloads/aria_s1_gunw,250,ok
+2024-12-02_marguerite_westmoreland_county,OPERA_S1_DISP,/scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery/2024-12-02_marguerite_westmoreland_county/downloads/opera_s1_disp,86,ok
+2024-12-16_park_place_schuylkill_county,ARIA_S1_GUNW,/scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery/2024-12-16_park_place_schuylkill_county/downloads/aria_s1_gunw,250,ok
+2024-12-16_park_place_schuylkill_county,OPERA_S1_DISP,/scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery/2024-12-16_park_place_schuylkill_county/downloads/opera_s1_disp,0,skipped: storage cap reached
+2023-08-16_eisenhower_parking_deck_penn_state,ARIA_S1_GUNW,/scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery/2023-08-16_eisenhower_parking_deck_penn_state/downloads/aria_s1_gunw,0,skipped: storage cap reached
+2023-08-16_eisenhower_parking_deck_penn_state,OPERA_S1_DISP,/scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery/2023-08-16_eisenhower_parking_deck_penn_state/downloads/opera_s1_disp,0,skipped: storage cap reached
+2020-08-28_packer_twp_carbon_county,ARIA_S1_GUNW,/scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery/2020-08-28_packer_twp_carbon_county/downloads/aria_s1_gunw,0,skipped: storage cap reached
+2020-08-28_packer_twp_carbon_county,OPERA_S1_DISP,/scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery/2020-08-28_packer_twp_carbon_county/downloads/opera_s1_disp,0,skipped: storage cap reached
+2018-08-10_tanger_outlets_lancaster,ARIA_S1_GUNW,/scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery/2018-08-10_tanger_outlets_lancaster/downloads/aria_s1_gunw,0,skipped: storage cap reached
+2018-08-10_tanger_outlets_lancaster,OPERA_S1_DISP,/scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery/2018-08-10_tanger_outlets_lancaster/downloads/opera_s1_disp,0,skipped: storage cap reached
+2018-07-26_codorus_creek_york,ARIA_S1_GUNW,/scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery/2018-07-26_codorus_creek_york/downloads/aria_s1_gunw,0,skipped: storage cap reached
+2018-07-26_codorus_creek_york,OPERA_S1_DISP,/scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery/2018-07-26_codorus_creek_york/downloads/opera_s1_disp,0,skipped: storage cap reached
+2023-10-30_130_sickler_hill_rd_luzerne,ARIA_S1_GUNW,/scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery/2023-10-30_130_sickler_hill_rd_luzerne/downloads/aria_s1_gunw,0,skipped: storage cap reached
+2023-10-30_130_sickler_hill_rd_luzerne,OPERA_S1_DISP,/scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery/2023-10-30_130_sickler_hill_rd_luzerne/downloads/opera_s1_disp,0,skipped: storage cap reached
+2018-03-01_west_whiteland_chester,ARIA_S1_GUNW,/scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery/2018-03-01_west_whiteland_chester/downloads/aria_s1_gunw,0,skipped: storage cap reached
+2018-03-01_west_whiteland_chester,OPERA_S1_DISP,/scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery/2018-03-01_west_whiteland_chester/downloads/opera_s1_disp,0,skipped: storage cap reached

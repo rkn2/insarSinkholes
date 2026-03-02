@@ -1,0 +1,3 @@
+event_id,event_date,location,dataset,window_start,window_end,count_in_manifest,count_available,first_scene,last_scene,browse_saved,manifest_csv
+2020-08-28_packer_twp_carbon_county,2020-08-28,"Packer Twp, Carbon County",SENTINEL1_SLC,2019-08-28,2020-11-28,250,250,2020-01-15 22:45:15+00:00,2020-11-22 22:45:18+00:00,0,/scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery_night2/2020-08-28_packer_twp_carbon_county/manifest_sentinel1_slc.csv
+2023-10-30_130_sickler_hill_rd_luzerne,2023-10-30,"130 Sickler Hill Rd, Luzerne",SENTINEL1_SLC,2022-10-30,2024-01-30,222,222,2022-10-30 22:59:52+00:00,2024-01-29 22:59:57+00:00,0,/scratch/rjn5308/sinkholes/outputs/sinkhole_event_discovery_night2/2023-10-30_130_sickler_hill_rd_luzerne/manifest_sentinel1_slc.csv

@@ -1,0 +1,11 @@
+train:
+  - 2018-07-26_codorus_creek_york
+  - 2018-08-10_tanger_outlets_lancaster
+  - 2020-08-28_packer_twp_carbon_county
+  - 2023-10-30_130_sickler_hill_rd_luzerne
+  - 2024-12-16_park_place_schuylkill_county
+val:
+  - 2023-08-16_eisenhower_parking_deck_penn_state
+test:
+  - 2018-03-01_west_whiteland_chester
+  - 2024-12-02_marguerite_westmoreland_county

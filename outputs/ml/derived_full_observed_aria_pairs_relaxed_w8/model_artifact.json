@@ -1,0 +1,68 @@
+{
+  "feature_columns": [
+    "cum_settlement_mm",
+    "vel_mm_day",
+    "acc_mm_day2",
+    "robust_vel_z",
+    "robust_accel_z",
+    "changepoint_flag",
+    "obs_gap_days",
+    "is_aria",
+    "is_opera"
+  ],
+  "scaler": {
+    "mu": [
+      -4.797516656938468,
+      0.18038830617795595,
+      1049.5142828678977,
+      -0.11675498473304469,
+      -55.33118975273214,
+      0.09638168427793788,
+      0.9844562668255831,
+      0.10342619276336855,
+      0.8965738072366315
+    ],
+    "sigma": [
+      11.643445450193484,
+      13.93009804317408,
+      70354.1063406606,
+      8.179353005560307,
+      3105.02314425786,
+      0.29511396987212546,
+      6.991603288196199,
+      0.30451472117755346,
+      0.3045147211775534
+    ]
+  },
+  "beta": [
+    0.2851851102433311,
+    -0.0079384725554776,
+    -0.04190460028646937,
+    0.12472922850988175,
+    1.7635158943421727,
+    -1.7240860891091843,
+    0.021908867686480094,
+    -0.015860406363933842,
+    0.006074055983721367,
+    -0.006074055983779906
+  ],
+  "datasets": [
+    "ARIA_S1_GUNW",
+    "OPERA_S1_DISP"
+  ],
+  "label_window_days": 60,
+  "label_min_vel_z": 0.1,
+  "label_min_accel_z": 0.05,
+  "positive_class_weight": 8.0,
+  "observed_displacement_csv": "/Users/rebeccanapolitano/antigravityProjects/digitalTwins/structuralEx/config/observed_displacement_aria_pairs_agg.csv",
+  "observed_points_used": 560,
+  "split_counts": {
+    "train_events": 5,
+    "val_events": 1,
+    "test_events": 2
+  },
+  "holdout_events": [
+    "2018-03-01_west_whiteland_chester",
+    "2024-12-02_marguerite_westmoreland_county"
+  ]
+}

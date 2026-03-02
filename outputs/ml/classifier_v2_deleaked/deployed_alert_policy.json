@@ -1,0 +1,17 @@
+{
+  "policy_name": "classifier_v2_deleaked_conservative_far0",
+  "threshold": 0.3,
+  "consecutive": 4,
+  "min_persistence_days": 7,
+  "cooldown_days": 0,
+  "selection_basis": "chosen from alert_policy_sweep with FAR<=3, maximizing test F1 among conservative options",
+  "test_metrics": {
+    "precision": 0.9999999999931035,
+    "recall": 0.2832031249994469,
+    "f1": 0.4414003040686762,
+    "false_alarms_per_year": 0.0,
+    "tp": 145,
+    "fp": 0,
+    "fn": 367
+  }
+}

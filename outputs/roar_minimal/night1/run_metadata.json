@@ -1,0 +1,20 @@
+{
+  "months_before": 12,
+  "months_after": 3,
+  "max_results": 250,
+  "download_browse": 0,
+  "download_products": true,
+  "auth_mode": "auto",
+  "skip_counts": true,
+  "events_total": 8,
+  "events_selected": 8,
+  "datasets_selected": [
+    "ARIA_S1_GUNW",
+    "OPERA_S1_DISP"
+  ],
+  "summary_rows": 16,
+  "max_downloads_per_manifest": null,
+  "max_total_gb": 50.0,
+  "prefer_derived": true,
+  "split_file": "/storage/home/rjn5308/sinkholes/config/event_split.yaml"
+}
