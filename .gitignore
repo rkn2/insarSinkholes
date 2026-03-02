@@ -1,0 +1,11 @@
+# macOS
+.DS_Store
+
+# Local cache/artifacts
+cache/
+
+# Local ASF/HyP3 package drop
+S1AA_20250609T230750_20260216T230739_VVR252_INT80_G_ueF_BC0C/
+
+# Output metadata cruft
+outputs/.DS_Store
